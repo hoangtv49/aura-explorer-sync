@@ -7,6 +7,7 @@ import { Queue } from 'bull';
 import { ConfigService, ENV_CONFIG } from '../shared/services/config.service';
 import { CommonUtil } from '../utils/common.util';
 import * as util from 'util';
+import { queuePool } from 'src/controllers/bull-board-queue';
 
 @Injectable()
 export class SyncSmartContractService {
@@ -36,6 +37,7 @@ export class SyncSmartContractService {
     this.syncData = config.SYNC_DATA;
     this.fromHeight = config.FROM_HEIGHT;
     this.toHeight = config.TO_HEIGHT;
+    queuePool.add(contractQueue);
   }
 
   /***

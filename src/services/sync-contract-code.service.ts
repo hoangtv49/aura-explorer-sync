@@ -18,6 +18,7 @@ import { SmartContractRepository } from '../repositories/smart-contract.reposito
 import { TokenMarketsRepository } from '../repositories/token-markets.repository';
 import { ConfigService, ENV_CONFIG } from '../shared/services/config.service';
 import { CommonUtil } from '../utils/common.util';
+import { queuePool } from 'src/controllers/bull-board-queue';
 
 @Injectable()
 export class SyncContractCodeService {
@@ -44,6 +45,7 @@ export class SyncContractCodeService {
     this.indexerChainId = this.configService.get('INDEXER_CHAIN_ID');
     this.syncMissingContractCode = ENV_CONFIG.SYNC_MISSING_CONTRACT_CODE;
     this.api = ENV_CONFIG.NODE.API;
+    queuePool.add(contractQueue);
   }
 
   @Interval(2000)

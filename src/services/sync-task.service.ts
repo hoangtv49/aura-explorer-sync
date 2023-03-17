@@ -22,6 +22,7 @@ import { BackoffOptions, CronRepeatOptions, JobOptions, Queue } from 'bull';
 import { SmartContractCodeRepository } from '../repositories/smart-contract-code.repository';
 import { TRANSACTION_TYPE } from '../common/constants/transaction-type.enum';
 import * as util from 'util';
+import { queuePool } from 'src/controllers/bull-board-queue';
 @Injectable()
 export class SyncTaskService {
   private readonly _logger = new Logger(SyncTaskService.name);
@@ -61,6 +62,7 @@ export class SyncTaskService {
     this.threads = ENV_CONFIG.THREADS;
 
     this.connectInfluxDB();
+    queuePool.add(validatorQueue);
   }
 
   /**

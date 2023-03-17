@@ -44,8 +44,10 @@ import { SoulboundTokenRepository } from './repositories/soulbound-token.reposit
 import { SoulboundToken } from './entities/soulbound-token.entity';
 import { SyncSmartContractService } from './services/sync-smart-contract.service';
 import { ValidatorProcessor } from './processor/validator.processor';
+import { AppController } from './controllers/app.controller';
+import { BullBoardController } from './controllers/bull-board-controller';
 
-const controllers = [];
+const controllers = [AppController, BullBoardController];
 const entities = [
   BlockSyncError,
   MissedBlock,

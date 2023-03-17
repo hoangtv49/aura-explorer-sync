@@ -16,6 +16,7 @@ import { CommonUtil } from '../utils/common.util';
 import { RedisUtil } from '../utils/redis.util';
 import { Equal, In } from 'typeorm';
 import { TokenMarkets } from '../entities';
+import { queuePool } from 'src/controllers/bull-board-queue';
 
 @Injectable()
 export class SyncTokenService {
@@ -34,6 +35,7 @@ export class SyncTokenService {
     this._logger.log(
       '============== Constructor Sync Token Service ==============',
     );
+    queuePool.add(contractQueue);
 
     // Call method when init app
     (async () => {

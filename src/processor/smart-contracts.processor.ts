@@ -264,7 +264,7 @@ export class SmartContractsProcessor {
       );
     }
   }
-
+//
   @Process(QUEUES.SYNC_PRICE_VOLUME)
   async handleSyncPriceVolume(job: Job) {
     try {
