@@ -49,6 +49,13 @@ export class SmartContractsProcessor {
   private indexerUrl;
   private indexerChainId;
   private influxDbClient: InfluxDBClient;
+  private contractLimit = 50;
+  private contractOffset = 0;
+  private syncData = false;
+  private fromHeight = 0;
+  private toHeight = 0;
+  private totalContract = 0;
+  private contractNextKey = '';
 
   constructor(
     private _commonUtil: CommonUtil,
@@ -356,7 +363,18 @@ export class SmartContractsProcessor {
   async syncSmartContractFromHeight(job: Job) {
     this.logger.log(`${this.syncSmartContractFromHeight.name} was called!`);
     try {
-      const smartContracts = job.data;
+      const responses = await this.getContractFromIndexer(
+        this.contractLimit,
+        this.fromHeight,
+        this.toHeight,
+        this.contractNextKey,
+      );
+      const smartContracts = responses?.smart_contracts;
+
+      if (smartContracts.length < 0) {
+        return 0;
+      }
+
       const contracts = [];
       const tokenMarkets = [];
       const smartContractCodes = [];
@@ -423,7 +441,6 @@ export class SmartContractsProcessor {
       throw err;
     }
   }
-  SYNC_CONTRACT_FROM_HEIGHT;
 
   @Process(QUEUES.SYNC_CW4973_NFT_STATUS)
   async handleSyncCw4973NftStatus(job: Job) {
@@ -815,5 +832,40 @@ export class SmartContractsProcessor {
     // jobs.forEach(async (job) => {
     //   await job.retry();
     // });
+  }
+
+  /**
+   * Get data from Indexer(Heroscope)
+   * @param limit
+   * @param offset
+   * @param fromHeight
+   * @param toHeight
+   * @returns
+   */
+  async getContractFromIndexer(
+    limit: number,
+    fromHeight: number,
+    toHeight: number,
+    nextKey = null,
+  ) {
+    let urlRequest = '';
+    if (nextKey && nextKey?.length > 0) {
+      urlRequest = `${this.indexerUrl}${util.format(
+        INDEXER_API.GET_SMART_CONTRACT_BY_NEXT_KEY,
+        this.indexerChainId,
+        limit,
+        nextKey,
+      )}`;
+    } else {
+      urlRequest = `${this.indexerUrl}${util.format(
+        INDEXER_API.GET_SMART_CONTRACTS,
+        this.indexerChainId,
+        limit,
+        fromHeight,
+        toHeight,
+      )}`;
+    }
+    const responses = await this._commonUtil.getDataAPI(urlRequest, '');
+    return responses?.data;
   }
 }
