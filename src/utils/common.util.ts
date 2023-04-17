@@ -51,6 +51,7 @@ export class CommonUtil {
   }
 
   async fetchDataFromGraphQL(endpoint, method, headers, query) {
+<<<<<<< Updated upstream
     try {
       const response = await axios({
         url: endpoint,
@@ -63,6 +64,17 @@ export class CommonUtil {
     } catch (error) {
       this._logger.error(`Error while query from graphql! error: ${error}`);
     }
+=======
+    return lastValueFrom(
+      this.httpService.post(endpoint, query, { headers }),
+    ).then((res) => res.data);
+  }
+
+  async getDataService(api, params) {
+    const data = await axios.get(api + params);
+
+    return data;
+>>>>>>> Stashed changes
   }
 
   getAddressFromPubkey(pubkey) {

@@ -136,15 +136,7 @@ export enum INDEXER_API {
 
 export const INDEXER_V2_API = {
   GRAPH_QL: {
-    // LIST_VALIDATOR: `query fetchListValidator { ${ENV_CONFIG.INDEXER_V2.CHAIN_DB} { validator { %s } } }`,
-    // LIST_VALIDATOR: `query fetchListValidator { auratestnet { validator { id } } }`,
-    LIST_VALIDATOR: `query fetchValidatorList {
-      ${ENV_CONFIG.INDEXER_V2.CHAIN_DB} {
-        validator {
-          %s
-        }
-      }
-    }`,
+    LIST_VALIDATOR: `query Query { ${ENV_CONFIG.INDEXER_V2.CHAIN_DB} { validator { %s } } }`,
   },
 };
 
@@ -221,4 +213,11 @@ export enum VOTING_POWER_LEVEL {
   GREEN = '1',
   YELLOW = '2',
   RED = '3',
+}
+
+export enum VALIDATOR_STATUSES {
+  BOND_STATUS_UNSPECIFIED,
+  BOND_STATUS_UNBONDED,
+  BOND_STATUS_UNBONDING,
+  BOND_STATUS_BONDED,
 }

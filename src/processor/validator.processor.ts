@@ -113,6 +113,7 @@ export class ValidatorProcessor {
             validatorUrl,
           );
 
+<<<<<<< Updated upstream
           // create validator
           const status = Number(validatorResponse.result?.status) || 0;
           const validatorAddr = this.commonUtil.getAddressFromPubkey(
@@ -215,7 +216,49 @@ export class ValidatorProcessor {
         graphqlQuery,
       );
       console.log(validatorsData1.data[ENV_CONFIG.INDEXER_V2.CHAIN_DB]);
+=======
+      // get validators data
+      const headers = {
+        'content-type': 'application/json',
+        'x-hasura-admin-secret': ENV_CONFIG.INDEXER_V2.SECRET,
+      };
 
+      const validatorAttributes = `description
+                                    operator_address
+                                    account_address
+                                    consensus_hex_address
+                                    percent_voting_power
+                                    tokens
+                                    jailed
+                                    jailed_until
+                                    uptime
+                                    status
+                                    unbonding_height
+                                    unbonding_time
+                                    consensus_pubkey
+                                    delegator_shares
+                                    commission
+                                    self_delegation_balance
+                                    min_self_delegation`;
+>>>>>>> Stashed changes
+
+      const graphqlQuery = {
+        query: util.format(
+          INDEXER_V2_API.GRAPH_QL.LIST_VALIDATOR,
+          validatorAttributes,
+        ),
+      };
+
+      const validatorsData1 = await this.commonUtil.fetchDataFromGraphQL(
+        ENV_CONFIG.INDEXER_V2.GRAPH_QL,
+        'POST',
+        headers,
+        graphqlQuery,
+      );
+      // ).data[ENV_CONFIG.INDEXER_V2.CHAIN_DB].validator;
+      // console.log(validatorsData.errors[0].extensions);
+      const validatorsData = validatorsData1.data['serenity']['validator']
+      console.log(validatorsData);
       // assign validators attributes
       if (validatorsData.length > 0) {
         const numOfValidators = validatorsData.filter((x) => !x.jailed).length;
@@ -224,6 +267,15 @@ export class ValidatorProcessor {
           equalPT = Number((100 / numOfValidators).toFixed(2));
 >>>>>>> Stashed changes
         }
+<<<<<<< Updated upstream
+=======
+        listValidator = await Promise.all(
+          Object.entries(validatorsData).map(
+            async ([key, validatorData]) =>
+              await this.assignAttrsForValidator(validatorData, equalPT),
+          ),
+        );
+>>>>>>> Stashed changes
       }
       if (validators.length > 0) {
         await this.validatorRepository.update(validators);
@@ -280,6 +332,7 @@ export class ValidatorProcessor {
    * Update data for image_url column
    * @param data
    */
+<<<<<<< Updated upstream
   async updateImage(data: any) {
     const validators = [];
     for await (const item of data) {
@@ -292,6 +345,85 @@ export class ValidatorProcessor {
         item.image_url = `validator-default.svg`;
       }
       validators.push(item);
+=======
+  async processListValidator(listValidator) {
+    console.log(1)
+    await this.validatorRepository.update(listValidator);
+    const validatorsDB = await this.validatorRepository.findAll();
+    console.log(validatorsDB)
+    const operators = validatorsDB
+      .filter(
+        (element) =>
+          !listValidator
+            .map((item) => item.operator_address)
+            .includes(element.operator_address),
+      )
+      .map((item) => item.operator_address);
+    await this.validatorRepository.removeUndelegateValidator(operators);
+  }
+
+  /**
+   * Fetch data from api and get an value by obj key
+   * @param path, key
+   */
+  async fetchPaginatedDataByKey(path, key): Promise<any> {
+    const result = [];
+    let nextKey = '';
+
+    do {
+      const params = `${this.api}${util.format(
+        path,
+        encodeURIComponent(nextKey),
+      )}`;
+      const data = await this.commonUtil.getDataAPI(params, '');
+
+      nextKey = data?.pagination?.nextKey;
+      result.push(...data[key]);
+    } while (!!nextKey);
+
+    return result;
+  }
+
+  /**
+   * Assign attributes for validator
+   * @param validatorData, poolData, signing, slashingData, equalPT
+   */
+  async assignAttrsForValidator(validatorData, equalPT): Promise<any> {
+    let validator;
+    // get account address
+    const operator_address = validatorData.operator_address;
+    const decodeAcc = bech32.decode(operator_address, 1023);
+    const wordsByte = bech32.fromWords(decodeAcc.words);
+    const account_address = bech32.encode(
+      CONST_PUBKEY_ADDR.AURA,
+      bech32.toWords(wordsByte),
+    );
+    try {
+      // Make Validator entity to insert data
+      validator = SyncDataHelpers.makeValidatorData(
+        validatorData,
+        account_address,
+      );
+
+      // Calculate power
+
+      if (Number(validator.percent_power) < equalPT) {
+        validator.voting_power_level = VOTING_POWER_LEVEL.GREEN;
+      } else if (Number(validator.percent_power) < 3 * equalPT) {
+        validator.voting_power_level = VOTING_POWER_LEVEL.YELLOW;
+      } else {
+        validator.voting_power_level = VOTING_POWER_LEVEL.RED;
+      }
+
+      const percentSelfBonded =
+        (validator.self_bonded / validatorData.tokens) * 100;
+      validator.percent_self_bonded =
+        percentSelfBonded.toFixed(2) + CONST_CHAR.PERCENT;
+    } catch (error) {
+      this.logger.error(`${error.name}: ${error.message}`);
+      this.logger.error(`${error.stack}`);
+      throw error;
+>>>>>>> Stashed changes
     }
     if (validators.length > 0) {
       await this.validatorRepository.update(validators);
