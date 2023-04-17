@@ -5,19 +5,20 @@ import {
   Process,
   Processor,
 } from '@nestjs/bull';
-import { Logger } from '@nestjs/common';
+import { Logger, Post } from '@nestjs/common';
 import { bech32 } from 'bech32';
 import { Job, Queue } from 'bull';
 import {
   CONST_CHAR,
   CONST_PUBKEY_ADDR,
+  INDEXER_V2_API,
   NODE_API,
   QUEUES,
   VOTING_POWER_LEVEL,
 } from '../common/constants/app.constant';
 import { SyncDataHelpers } from '../helpers/sync-data.helpers';
 import { ValidatorRepository } from '../repositories/validator.repository';
-import { ENV_CONFIG } from '../shared/services/config.service';
+import { ConfigService, ENV_CONFIG } from '../shared/services/config.service';
 import { CommonUtil } from '../utils/common.util';
 import * as util from 'util';
 import { CronExpression } from '@nestjs/schedule';
@@ -45,7 +46,7 @@ export class ValidatorProcessor {
       {},
       {
         removeOnFail: false,
-        repeat: { cron: CronExpression.EVERY_10_SECONDS },
+        repeat: { cron: CronExpression.EVERY_DAY_AT_MIDNIGHT },
       },
     );
 
@@ -82,6 +83,41 @@ export class ValidatorProcessor {
           this.fetchPaginatedDataByKey(NODE_API.LIST_VALIDATOR, 'validators'),
           this.fetchPaginatedDataByKey(NODE_API.LIST_SIGNING_INFOS, 'info'),
         ]);
+
+      // get validators data
+      const headers = {
+        'content-type': 'application/json',
+        'x-hasura-admin-secret': 'abc@123',
+      };
+
+      const validatorAttributes = `id
+                                    start_height
+                                    tokens
+                                    unbonding_height
+                                    self_delegation_balance
+                                    percent_voting_power
+                                    commission
+                                    jailed
+                                    uptime
+                                    status
+                                    description`;
+
+      const graphqlQuery = {
+        operationName: 'fetchValidatorList',
+        query: util.format(
+          INDEXER_V2_API.GRAPH_QL.LIST_VALIDATOR,
+          validatorAttributes,
+        ),
+        variables: {},
+      };
+
+      const validatorsData1 = await this.commonUtil.fetchDataFromGraphQL(
+        'https://indexer-v2.dev.aurascan.io/v1/graphql',
+        'POST',
+        headers,
+        graphqlQuery,
+      );
+      console.log(validatorsData1.data[ENV_CONFIG.INDEXER_V2.CHAIN_DB]);
 
       // assign validators attributes
       if (validatorsData.length > 0) {

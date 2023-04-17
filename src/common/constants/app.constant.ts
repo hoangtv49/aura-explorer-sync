@@ -1,3 +1,5 @@
+import { ENV_CONFIG } from 'src/shared/services/config.service';
+
 export enum ORDER_BY {
   DESC = 'DESC',
   ASC = 'ASC',
@@ -131,6 +133,20 @@ export enum INDEXER_API {
   GET_SMART_CONTRACT_BT_CONTRACT_ADDRESS = 'api/v1/smart-contracts?chainId=%s&contract_addresses[]=%s',
   GET_SMART_CONTRACT_BT_LIST_CONTRACT_ADDRESS = 'api/v1/smart-contracts?chainId=%s',
 }
+
+export const INDEXER_V2_API = {
+  GRAPH_QL: {
+    // LIST_VALIDATOR: `query fetchListValidator { ${ENV_CONFIG.INDEXER_V2.CHAIN_DB} { validator { %s } } }`,
+    // LIST_VALIDATOR: `query fetchListValidator { auratestnet { validator { id } } }`,
+    LIST_VALIDATOR: `query fetchValidatorList {
+      ${ENV_CONFIG.INDEXER_V2.CHAIN_DB} {
+        validator {
+          %s
+        }
+      }
+    }`,
+  },
+};
 
 export enum COINGECKO_API {
   GET_PRICE_VOLUME = 'simple/price?ids=%s&vs_currencies=usd&include_24hr_vol=true&include_24hr_change=true&include_last_updated_at=true',

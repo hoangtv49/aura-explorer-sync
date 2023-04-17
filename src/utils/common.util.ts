@@ -50,10 +50,19 @@ export class CommonUtil {
     ).then((rs) => rs.data);
   }
 
-  async getDataService(api, params) {
-    const data = await axios.get(api + params);
-
-    return data;
+  async fetchDataFromGraphQL(endpoint, method, headers, query) {
+    try {
+      const response = await axios({
+        url: endpoint,
+        method: method,
+        headers: headers,
+        data: query,
+        timeout: 30000,
+      });
+      return response.data;
+    } catch (error) {
+      this._logger.error(`Error while query from graphql! error: ${error}`);
+    }
   }
 
   getAddressFromPubkey(pubkey) {
