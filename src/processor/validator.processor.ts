@@ -1,16 +1,28 @@
+<<<<<<< Updated upstream
 import { OnQueueError, OnQueueFailed, Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
+=======
+import {
+  InjectQueue,
+  OnQueueError,
+  OnQueueFailed,
+  Process,
+  Processor,
+} from '@nestjs/bull';
+import { Logger, Post } from '@nestjs/common';
+>>>>>>> Stashed changes
 import { bech32 } from 'bech32';
 import { Job } from 'bull';
 import {
   CONST_CHAR,
   CONST_PUBKEY_ADDR,
+  INDEXER_V2_API,
   NODE_API,
   QUEUES,
 } from '../common/constants/app.constant';
 import { SyncDataHelpers } from '../helpers/sync-data.helpers';
 import { ValidatorRepository } from '../repositories/validator.repository';
-import { ENV_CONFIG } from '../shared/services/config.service';
+import { ConfigService, ENV_CONFIG } from '../shared/services/config.service';
 import { CommonUtil } from '../utils/common.util';
 
 @Processor('validator')
@@ -31,12 +43,31 @@ export class ValidatorProcessor {
     this.keybaseUrl = ENV_CONFIG.KEY_BASE_URL;
   }
 
+<<<<<<< Updated upstream
   @Process(QUEUES.SYNC_VALIDATOR)
   async syncValidator(job: Job) {
     this.logger.log(
       `${this.syncValidator.name} was called with para: ${JSON.stringify(
         job.data,
       )}`,
+=======
+    this.validatorQueue.add(
+      QUEUES.SYNC_LIST_VALIDATOR,
+      {},
+      {
+        removeOnFail: false,
+        repeat: { cron: CronExpression.EVERY_DAY_AT_MIDNIGHT },
+      },
+    );
+
+    this.validatorQueue.add(
+      QUEUES.SYNC_VALIDATOR_IMAGE,
+      {},
+      {
+        removeOnFail: false,
+        repeat: { cron: CronExpression.EVERY_DAY_AT_MIDNIGHT },
+      },
+>>>>>>> Stashed changes
     );
     await this.processValidator(job.data);
   }
@@ -96,6 +127,7 @@ export class ValidatorProcessor {
             validatorAddr,
           );
 
+<<<<<<< Updated upstream
           const percentPower =
             (validatorInfo.tokens / poolData.pool.bonded_tokens) * 100;
           newValidator.percent_power = percentPower.toFixed(2);
@@ -148,6 +180,49 @@ export class ValidatorProcessor {
             identity: newValidator.identity,
             image_url: null,
           });
+=======
+      // get validators data
+      const headers = {
+        'content-type': 'application/json',
+        'x-hasura-admin-secret': 'abc@123',
+      };
+
+      const validatorAttributes = `id
+                                    start_height
+                                    tokens
+                                    unbonding_height
+                                    self_delegation_balance
+                                    percent_voting_power
+                                    commission
+                                    jailed
+                                    uptime
+                                    status
+                                    description`;
+
+      const graphqlQuery = {
+        operationName: 'fetchValidatorList',
+        query: util.format(
+          INDEXER_V2_API.GRAPH_QL.LIST_VALIDATOR,
+          validatorAttributes,
+        ),
+        variables: {},
+      };
+
+      const validatorsData1 = await this.commonUtil.fetchDataFromGraphQL(
+        'https://indexer-v2.dev.aurascan.io/v1/graphql',
+        'POST',
+        headers,
+        graphqlQuery,
+      );
+      console.log(validatorsData1.data[ENV_CONFIG.INDEXER_V2.CHAIN_DB]);
+
+      // assign validators attributes
+      if (validatorsData.length > 0) {
+        const numOfValidators = validatorsData.filter((x) => !x.jailed).length;
+        let equalPT = 0;
+        if (numOfValidators > 0) {
+          equalPT = Number((100 / numOfValidators).toFixed(2));
+>>>>>>> Stashed changes
         }
       }
       if (validators.length > 0) {
