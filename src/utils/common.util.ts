@@ -50,10 +50,31 @@ export class CommonUtil {
     ).then((rs) => rs.data);
   }
 
+  async fetchDataFromGraphQL(endpoint, method, headers, query) {
+<<<<<<< Updated upstream
+    try {
+      const response = await axios({
+        url: endpoint,
+        method: method,
+        headers: headers,
+        data: query,
+        timeout: 30000,
+      });
+      return response.data;
+    } catch (error) {
+      this._logger.error(`Error while query from graphql! error: ${error}`);
+    }
+=======
+    return lastValueFrom(
+      this.httpService.post(endpoint, query, { headers }),
+    ).then((res) => res.data);
+  }
+
   async getDataService(api, params) {
     const data = await axios.get(api + params);
 
     return data;
+>>>>>>> Stashed changes
   }
 
   getAddressFromPubkey(pubkey) {

@@ -29,6 +29,8 @@ import { TransactionHelper } from '../helpers/transaction.helper';
 import { SmartContractRepository } from '../repositories/smart-contract.repository';
 import { In } from 'typeorm';
 @Injectable()
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
 export class SyncTaskService {
   private readonly _logger = new Logger(SyncTaskService.name);
   private rpc;
@@ -598,3 +600,9 @@ export class SyncTaskService {
     );
   }
 }
+=======
+export class SyncTaskService {}
+>>>>>>> Stashed changes
+=======
+export class SyncTaskService {}
+>>>>>>> Stashed changes

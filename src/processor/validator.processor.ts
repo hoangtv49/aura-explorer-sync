@@ -1,16 +1,28 @@
+<<<<<<< Updated upstream
 import { OnQueueError, OnQueueFailed, Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
+=======
+import {
+  InjectQueue,
+  OnQueueError,
+  OnQueueFailed,
+  Process,
+  Processor,
+} from '@nestjs/bull';
+import { Logger, Post } from '@nestjs/common';
+>>>>>>> Stashed changes
 import { bech32 } from 'bech32';
 import { Job } from 'bull';
 import {
   CONST_CHAR,
   CONST_PUBKEY_ADDR,
+  INDEXER_V2_API,
   NODE_API,
   QUEUES,
 } from '../common/constants/app.constant';
 import { SyncDataHelpers } from '../helpers/sync-data.helpers';
 import { ValidatorRepository } from '../repositories/validator.repository';
-import { ENV_CONFIG } from '../shared/services/config.service';
+import { ConfigService, ENV_CONFIG } from '../shared/services/config.service';
 import { CommonUtil } from '../utils/common.util';
 
 @Processor('validator')
@@ -31,12 +43,31 @@ export class ValidatorProcessor {
     this.keybaseUrl = ENV_CONFIG.KEY_BASE_URL;
   }
 
+<<<<<<< Updated upstream
   @Process(QUEUES.SYNC_VALIDATOR)
   async syncValidator(job: Job) {
     this.logger.log(
       `${this.syncValidator.name} was called with para: ${JSON.stringify(
         job.data,
       )}`,
+=======
+    this.validatorQueue.add(
+      QUEUES.SYNC_LIST_VALIDATOR,
+      {},
+      {
+        removeOnFail: false,
+        repeat: { cron: CronExpression.EVERY_DAY_AT_MIDNIGHT },
+      },
+    );
+
+    this.validatorQueue.add(
+      QUEUES.SYNC_VALIDATOR_IMAGE,
+      {},
+      {
+        removeOnFail: false,
+        repeat: { cron: CronExpression.EVERY_DAY_AT_MIDNIGHT },
+      },
+>>>>>>> Stashed changes
     );
     await this.processValidator(job.data);
   }
@@ -82,6 +113,7 @@ export class ValidatorProcessor {
             validatorUrl,
           );
 
+<<<<<<< Updated upstream
           // create validator
           const status = Number(validatorResponse.result?.status) || 0;
           const validatorAddr = this.commonUtil.getAddressFromPubkey(
@@ -96,6 +128,7 @@ export class ValidatorProcessor {
             validatorAddr,
           );
 
+<<<<<<< Updated upstream
           const percentPower =
             (validatorInfo.tokens / poolData.pool.bonded_tokens) * 100;
           newValidator.percent_power = percentPower.toFixed(2);
@@ -148,7 +181,101 @@ export class ValidatorProcessor {
             identity: newValidator.identity,
             image_url: null,
           });
+=======
+      // get validators data
+      const headers = {
+        'content-type': 'application/json',
+        'x-hasura-admin-secret': 'abc@123',
+      };
+
+      const validatorAttributes = `id
+                                    start_height
+                                    tokens
+                                    unbonding_height
+                                    self_delegation_balance
+                                    percent_voting_power
+                                    commission
+                                    jailed
+                                    uptime
+                                    status
+                                    description`;
+
+      const graphqlQuery = {
+        operationName: 'fetchValidatorList',
+        query: util.format(
+          INDEXER_V2_API.GRAPH_QL.LIST_VALIDATOR,
+          validatorAttributes,
+        ),
+        variables: {},
+      };
+
+      const validatorsData1 = await this.commonUtil.fetchDataFromGraphQL(
+        'https://indexer-v2.dev.aurascan.io/v1/graphql',
+        'POST',
+        headers,
+        graphqlQuery,
+      );
+      console.log(validatorsData1.data[ENV_CONFIG.INDEXER_V2.CHAIN_DB]);
+=======
+      // get validators data
+      const headers = {
+        'content-type': 'application/json',
+        'x-hasura-admin-secret': ENV_CONFIG.INDEXER_V2.SECRET,
+      };
+
+      const validatorAttributes = `description
+                                    operator_address
+                                    account_address
+                                    consensus_hex_address
+                                    percent_voting_power
+                                    tokens
+                                    jailed
+                                    jailed_until
+                                    uptime
+                                    status
+                                    unbonding_height
+                                    unbonding_time
+                                    consensus_pubkey
+                                    delegator_shares
+                                    commission
+                                    self_delegation_balance
+                                    min_self_delegation`;
+>>>>>>> Stashed changes
+
+      const graphqlQuery = {
+        query: util.format(
+          INDEXER_V2_API.GRAPH_QL.LIST_VALIDATOR,
+          validatorAttributes,
+        ),
+      };
+
+      const validatorsData1 = await this.commonUtil.fetchDataFromGraphQL(
+        ENV_CONFIG.INDEXER_V2.GRAPH_QL,
+        'POST',
+        headers,
+        graphqlQuery,
+      );
+      // ).data[ENV_CONFIG.INDEXER_V2.CHAIN_DB].validator;
+      // console.log(validatorsData.errors[0].extensions);
+      const validatorsData = validatorsData1.data['serenity']['validator']
+      console.log(validatorsData);
+      // assign validators attributes
+      if (validatorsData.length > 0) {
+        const numOfValidators = validatorsData.filter((x) => !x.jailed).length;
+        let equalPT = 0;
+        if (numOfValidators > 0) {
+          equalPT = Number((100 / numOfValidators).toFixed(2));
+>>>>>>> Stashed changes
         }
+<<<<<<< Updated upstream
+=======
+        listValidator = await Promise.all(
+          Object.entries(validatorsData).map(
+            async ([key, validatorData]) =>
+              await this.assignAttrsForValidator(validatorData, equalPT),
+          ),
+        );
+>>>>>>> Stashed changes
       }
       if (validators.length > 0) {
         await this.validatorRepository.update(validators);
@@ -205,6 +332,7 @@ export class ValidatorProcessor {
    * Update data for image_url column
    * @param data
    */
+<<<<<<< Updated upstream
   async updateImage(data: any) {
     const validators = [];
     for await (const item of data) {
@@ -217,6 +345,85 @@ export class ValidatorProcessor {
         item.image_url = `validator-default.svg`;
       }
       validators.push(item);
+=======
+  async processListValidator(listValidator) {
+    console.log(1)
+    await this.validatorRepository.update(listValidator);
+    const validatorsDB = await this.validatorRepository.findAll();
+    console.log(validatorsDB)
+    const operators = validatorsDB
+      .filter(
+        (element) =>
+          !listValidator
+            .map((item) => item.operator_address)
+            .includes(element.operator_address),
+      )
+      .map((item) => item.operator_address);
+    await this.validatorRepository.removeUndelegateValidator(operators);
+  }
+
+  /**
+   * Fetch data from api and get an value by obj key
+   * @param path, key
+   */
+  async fetchPaginatedDataByKey(path, key): Promise<any> {
+    const result = [];
+    let nextKey = '';
+
+    do {
+      const params = `${this.api}${util.format(
+        path,
+        encodeURIComponent(nextKey),
+      )}`;
+      const data = await this.commonUtil.getDataAPI(params, '');
+
+      nextKey = data?.pagination?.nextKey;
+      result.push(...data[key]);
+    } while (!!nextKey);
+
+    return result;
+  }
+
+  /**
+   * Assign attributes for validator
+   * @param validatorData, poolData, signing, slashingData, equalPT
+   */
+  async assignAttrsForValidator(validatorData, equalPT): Promise<any> {
+    let validator;
+    // get account address
+    const operator_address = validatorData.operator_address;
+    const decodeAcc = bech32.decode(operator_address, 1023);
+    const wordsByte = bech32.fromWords(decodeAcc.words);
+    const account_address = bech32.encode(
+      CONST_PUBKEY_ADDR.AURA,
+      bech32.toWords(wordsByte),
+    );
+    try {
+      // Make Validator entity to insert data
+      validator = SyncDataHelpers.makeValidatorData(
+        validatorData,
+        account_address,
+      );
+
+      // Calculate power
+
+      if (Number(validator.percent_power) < equalPT) {
+        validator.voting_power_level = VOTING_POWER_LEVEL.GREEN;
+      } else if (Number(validator.percent_power) < 3 * equalPT) {
+        validator.voting_power_level = VOTING_POWER_LEVEL.YELLOW;
+      } else {
+        validator.voting_power_level = VOTING_POWER_LEVEL.RED;
+      }
+
+      const percentSelfBonded =
+        (validator.self_bonded / validatorData.tokens) * 100;
+      validator.percent_self_bonded =
+        percentSelfBonded.toFixed(2) + CONST_CHAR.PERCENT;
+    } catch (error) {
+      this.logger.error(`${error.name}: ${error.message}`);
+      this.logger.error(`${error.stack}`);
+      throw error;
+>>>>>>> Stashed changes
     }
     if (validators.length > 0) {
       await this.validatorRepository.update(validators);
