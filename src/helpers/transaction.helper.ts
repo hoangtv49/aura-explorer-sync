@@ -274,13 +274,17 @@ export class TransactionHelper {
           !!message?.contract
         ) {
           addressInTx.push(message.contract);
+          const messageMsg =
+            typeof message.msg === 'string'
+              ? JSON.parse(message.msg)
+              : message.msg;
           const contractAddress =
-            message?.msg?.buy?.contract_address ||
-            message?.msg?.accept_nft_offer?.nft?.contract_address;
+            messageMsg?.buy?.contract_address ||
+            messageMsg?.accept_nft_offer?.nft?.contract_address;
           if (!!contractAddress) {
             addressInTx.push(contractAddress);
           }
-          const method = Object.keys(message.msg || {})[0] || '';
+          const method = Object.keys(messageMsg || {})[0] || '';
           if (
             type === TRANSACTION_TYPE.EXECUTE_CONTRACT &&
             method === MODE_EXECUTE_TRANSACTION.MINT

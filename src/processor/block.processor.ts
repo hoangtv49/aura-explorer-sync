@@ -229,8 +229,7 @@ export class BlockProcessor extends BaseProcessor {
 
     const optionQueue: JobOptions = {
       removeOnComplete: true,
-      attempts: 3,
-      // repeat: this.everyRepeatOptions,
+      attempts: JOB_OPTIONS.ATTEMPTS.THREE_TIMES,
       backoff: {
         type: JOB_OPTIONS.REPEAT_TYPE.FIXED,
         delay: JOB_OPTIONS.TIME_DELAY.AFTER_3_SECONDS,
@@ -286,13 +285,17 @@ export class BlockProcessor extends BaseProcessor {
 
             let takeMessage;
             let unequipMessage;
+            const messageMsg =
+              typeof message.msg === 'string'
+                ? JSON.parse(message.msg)
+                : message.msg;
             const receiverAddress = message.sender;
             // Execute contract CW4973
-            if (message.msg?.take?.signature) {
-              takeMessage = message;
+            if (messageMsg?.take?.signature) {
+              takeMessage = messageMsg;
             }
-            if (message.msg?.unequip?.token_id) {
-              unequipMessage = message;
+            if (messageMsg?.unequip?.token_id) {
+              unequipMessage = messageMsg;
             }
             if (takeMessage || unequipMessage) {
               this.contractQueue.add(

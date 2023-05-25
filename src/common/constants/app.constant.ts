@@ -301,6 +301,9 @@ export const JOB_OPTIONS = {
     AFTER_10_SECONDS: 10000,
   },
   TIME_DELAY: {
-    AFTER_3_SECONDS: 30000,
+    AFTER_3_SECONDS: 3000,
+  },
+  ATTEMPTS: {
+    THREE_TIMES: 3,
   },
 };
