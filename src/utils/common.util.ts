@@ -11,6 +11,7 @@ import {
   CONST_CHAR,
   CONTRACT_TYPE,
   CW4973_CONTRACT,
+  DEFAULT_HEADER,
   NODE_API,
 } from '../common/constants/app.constant';
 import axios from 'axios';
@@ -56,14 +57,10 @@ export class CommonUtil {
     return data;
   }
 
-  async fetchDataFromGraphQL(endpoint, method, query, headers?) {
-    headers = headers
-      ? headers
-      : {
-          'content-type': 'application/json',
-          'x-hasura-admin-secret': ENV_CONFIG.INDEXER_V2.SECRET,
-        };
-
+  async fetchDataFromGraphQL(query, endpoint?, method?, headers?) {
+    headers = headers ? headers : DEFAULT_HEADER;
+    endpoint = endpoint ? endpoint : ENV_CONFIG.INDEXER_V2.GRAPH_QL;
+    method = method ? method : 'POST';
     try {
       const response = await axios({
         url: endpoint,
@@ -323,5 +320,13 @@ export class CommonUtil {
       return primary?.url || '';
     }
     return '';
+  }
+
+  convertDate(timestamp: any): Date {
+    const strTime = String(timestamp);
+    const idx = strTime.lastIndexOf('.');
+    const dateConvert =
+      idx > -1 ? strTime.substring(0, idx) + '.000Z' : strTime;
+    return new Date(dateConvert);
   }
 }

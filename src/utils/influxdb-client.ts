@@ -6,20 +6,21 @@ import {
 } from '@influxdata/influxdb-client';
 import { CONTRACT_TYPE } from '../common/constants/app.constant';
 import { TokenMarkets } from '../entities';
+import { ENV_CONFIG } from 'src/shared/services/config.service';
+import { CommonUtil } from './common.util';
+import { Injectable } from '@nestjs/common';
 
+@Injectable()
 export class InfluxDBClient {
   private client: InfluxDB;
   private queryApi: QueryApi;
   private writeApi: WriteApi;
+  private bucket: string = ENV_CONFIG.INFLUX_DB.BUCKET;
+  private org: string = ENV_CONFIG.INFLUX_DB.ORGANIZATION;
+  private url: string = ENV_CONFIG.INFLUX_DB.URL;
+  private token: string = ENV_CONFIG.INFLUX_DB.TOKEN;
 
-  constructor(
-    public bucket: string,
-    public org: string,
-    public url: string,
-    public token: string,
-  ) {
-    this.client = new InfluxDB({ url, token });
-  }
+  constructor(private commonUtil: CommonUtil) {}
 
   initQueryApi(): void {
     this.queryApi = this.client.getQueryApi(this.org);
@@ -87,7 +88,7 @@ export class InfluxDBClient {
       .stringField('block_hash', block_hash)
       .intField('height', height)
       .intField('num_txs', num_txs)
-      .timestamp(this.convertDate(timestamp))
+      .timestamp(this.commonUtil.convertDate(timestamp))
       .stringField('proposer', proposer);
     this.writeApi.writePoint(point);
   }
@@ -105,7 +106,7 @@ export class InfluxDBClient {
       .stringField('tx_hash', tx_hash)
       .intField('height', height)
       .stringField('type', type)
-      .timestamp(this.convertDate(timestamp));
+      .timestamp(this.commonUtil.convertDate(timestamp));
     this.writeApi.writePoint(point);
   }
 
@@ -121,26 +122,13 @@ export class InfluxDBClient {
         .stringField('tx_hash', item.tx_hash)
         .intField('height', item.height)
         .stringField('type', item.type)
-        .timestamp(this.convertDate(item.timestamp));
+        .timestamp(this.commonUtil.convertDate(item.timestamp));
       points.push(point);
     });
 
     if (points.length > 0) {
       this.writeApi.writePoints(points);
     }
-  }
-
-  /**
-   * convertDate
-   * @param timestamp
-   * @returns
-   */
-  convertDate(timestamp: any): Date {
-    const strTime = String(timestamp);
-    const idx = strTime.lastIndexOf('.');
-    const dateConvert =
-      idx > -1 ? strTime.substring(0, idx) + '.000Z' : strTime;
-    return new Date(dateConvert);
   }
 
   /**
@@ -276,7 +264,7 @@ export class InfluxDBClient {
         .stringField('block_hash', item.block_hash)
         .intField('height', item.height)
         .intField('num_txs', item.num_txs)
-        .timestamp(this.convertDate(item.timestamp))
+        .timestamp(this.commonUtil.convertDate(item.timestamp))
         .stringField('proposer', item.proposer);
       points.push(point);
     });
@@ -307,13 +295,29 @@ export class InfluxDBClient {
         .floatField('market_cap', token.market_cap)
         // .intField('current_holder', token.current_holder)
         // .floatField('percent_hold', token.holder_change_percentage_24h)
-        .timestamp(this.convertDate(token.updated_at));
+        .timestamp(this.commonUtil.convertDate(token.updated_at));
       points.push(point);
     });
 
     if (points.length > 0) {
       this.writeApi.writePoints(points);
       await this.writeApi.flush();
+    }
+  }
+
+  connectInfluxDB(): void {
+    this.client = new InfluxDB({
+      url: this.url,
+      token: this.token,
+    });
+
+    this.initWriteApi();
+  }
+
+  reConnectInfluxDB(error: any): void {
+    const errorCode = error?.code || '';
+    if (errorCode === 'ECONNREFUSED' || errorCode === 'ETIMEDOUT') {
+      this.connectInfluxDB();
     }
   }
 }
